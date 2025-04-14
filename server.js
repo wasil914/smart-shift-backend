@@ -13,6 +13,10 @@ const authRoutes = require('./routes/authRoutes');
 
 app.use('/api/auth', authRoutes);
 
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
+
 app.get('/', (req, res) => {
   res.send('Smart Shift Backend Running');
 });
