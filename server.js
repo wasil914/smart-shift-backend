@@ -16,6 +16,13 @@ app.use('/api/auth', authRoutes);
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 
+const availabilityRoutes = require('./routes/availabilityRoutes');
+app.use('/api/availability', availabilityRoutes);
+
+const scheduleRoutes = require('./routes/scheduleRoutes');
+app.use('/api/schedule', scheduleRoutes);
+
+
 
 app.get('/', (req, res) => {
   res.send('Smart Shift Backend Running');
