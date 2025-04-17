@@ -1,37 +1,53 @@
+
+
 const express = require('express');
 const router = express.Router();
-const requireRole = require('../middleware/requireRole');
-const User = require('../models/User');
+const ShiftConfig = require('../models/ShiftConfig');
+const jwt = require('jsonwebtoken');
 
-// Admin-only: Update another user's role and/or seniority
-router.put('/update-user/:id', requireRole('admin'), async (req, res) => {
+// Admin middleware (basic)
+const adminAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized' });
+
+  const token = authHeader.split(' ')[1];
   try {
-    const { role, seniority } = req.body;
-
-    const updatedFields = {};
-    if (role) updatedFields.role = role;
-    if (seniority) updatedFields.seniority = seniority;
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { $set: updatedFields },
-      { new: true }
-    );
-
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    res.json({
-      message: 'User updated successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        role: user.role,
-        seniority: user.seniority
-      }
-    });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    req.user = decoded;
+    next();
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to update user' });
+    res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Get current config
+router.get('/shift-config', adminAuth, async (req, res) => {
+  let config = await ShiftConfig.findOne();
+  if (!config) {
+    config = new ShiftConfig(); // insert default
+    await config.save();
+  }
+  res.json(config);
+});
+
+// Update config
+router.put('/shift-config', adminAuth, async (req, res) => {
+  const { minEmployeesPerShift, maxEmployeesPerShift } = req.body;
+
+  try {
+    let config = await ShiftConfig.findOne();
+    if (!config) config = new ShiftConfig();
+
+    config.minEmployeesPerShift = minEmployeesPerShift;
+    config.maxEmployeesPerShift = maxEmployeesPerShift;
+
+    await config.save();
+    res.json({ message: 'Shift config updated', config });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating config', error: err.message });
   }
 });
 

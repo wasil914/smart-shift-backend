@@ -20,8 +20,9 @@ const availabilityRoutes = require('./routes/availabilityRoutes');
 app.use('/api/availability', availabilityRoutes);
 
 const scheduleRoutes = require('./routes/scheduleRoutes');
-app.use('/api/schedule', scheduleRoutes);
+app.use('/api/schedule', require('./routes/scheduleRoutes'));
 
+app.use('/api/config', require('./routes/configRoutes'));
 
 
 app.get('/', (req, res) => {
